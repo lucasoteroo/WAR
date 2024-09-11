@@ -99,7 +99,8 @@ def verificar_objetivo(jogador: str):
 
 # Endpoint para adicionar jogadores
 @app.post("/jogadores/adicionar/")
-def adicionar_jogador(jogador: Jogador):
+def adicionar_jogador(nome: str):
+    jogador = Jogador(nome=nome)
     jogadores.append(jogador)
     return {"message": f"Jogador {jogador.nome} adicionado com sucesso"}
 
