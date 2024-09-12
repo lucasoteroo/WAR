@@ -186,6 +186,27 @@ def distribuir_exercitos(jogador: str, exercitos: int):
     jogador_obj.exercitos += exercitos
     return {"message": f"{exercitos} exércitos distribuídos para o jogador {jogador}"}
 
+@app.post("/preparacao/distribuir-exercitos-iniciais/")
+def distribuir_exercitos_iniciais():
+    numero_jogadores = len(jogadores)
+    if numero_jogadores == 6:
+        exercitos_por_jogador = 20
+    elif numero_jogadores == 5:
+        exercitos_por_jogador = 25
+    elif numero_jogadores == 4:
+        exercitos_por_jogador = 30
+    elif numero_jogadores == 3:
+        exercitos_por_jogador = 35
+    elif numero_jogadores == 2:
+        exercitos_por_jogador = 40
+    else:
+        raise HTTPException(status_code=400, detail="Número de jogadores inválido.")
+
+    for jogador in jogadores:
+        jogador.exercitos += exercitos_por_jogador
+    
+    return {"message": f"Exércitos iniciais distribuídos. Cada jogador recebeu {exercitos_por_jogador} exércitos."}
+
 # Rodada
 @app.post("/rodada/iniciar/") 
 def iniciar_rodada():
