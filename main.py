@@ -88,6 +88,7 @@ cartas_possiveis = ["Quadrado", "Triangulo", "Circulo"]
 
 jogadores = []
 ordem_jogadores = []
+trocas_de_cartas = 0  # Contador global de trocas
 
 
 
@@ -316,20 +317,35 @@ def mover_exercitos(jogador: str, origem: str, destino: str, quantidade: int):
 
     return {"message": f"{quantidade} exércitos movidos de {origem} para {destino} pelo jogador {jogador}."}
 
-@app.post("/rodada/troca-cartas/")
+
+
+@app.post("/rodada/trocar-cartas/")
 def trocar_cartas(jogador: str, cartas: List[str]):
     jogador_obj = encontrar_jogador(jogador)
+
+    if len(cartas) != 3:
+        raise HTTPException(status_code=400, detail="São necessárias 3 cartas para trocar por exércitos.")
     
-    # Verifica se o jogador possui as cartas que está tentando trocar
-    if not set(cartas).issubset(set(jogador_obj.cartas)):
-        raise HTTPException(status_code=400, detail="Troca inválida: o jogador não possui todas as cartas mencionadas.")
-    
-    # Adicione a lógica para realizar a troca de cartas
-    # Remova as cartas trocadas do jogador
+    # Verifica se o jogador tem as cartas
     for carta in cartas:
-        jogador_obj.cartas.remove(carta)
+        if carta not in jogador_obj.cartas:
+            raise HTTPException(status_code=400, detail="Jogador não tem as cartas especificadas.")
+
+    # Verifica se as cartas formam uma combinação válida (todos iguais ou uma de cada tipo)
+    if len(set(cartas)) == 1 or len(set(cartas)) == 3:
+        # Remove as cartas do jogador
+        for carta in cartas:
+            jogador_obj.cartas.remove(carta)
+
+        global trocas_de_cartas
+        trocas_de_cartas += 1
+        exercitos_ganhos = 4 + (trocas_de_cartas - 1) * 2  # Primeira troca dá 4 exércitos, depois aumenta em 2 cada vez
+        jogador_obj.exercitos += exercitos_ganhos
+
+        return {"message": f"Troca bem-sucedida! {jogador} recebeu {exercitos_ganhos} exércitos."}
     
-    return {"message": f"{jogador} trocou as cartas {cartas}"}
+    raise HTTPException(status_code=400, detail="Cartas inválidas para troca.")
+
 
 @app.post("/rodada/exercitos-por-continente/")
 def exercitos_bonus_por_continente():
