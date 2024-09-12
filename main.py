@@ -126,6 +126,29 @@ def controlar_continente(jogador: Jogador) -> int:
                 exercitos_bonus += 2
     return exercitos_bonus
 
+# Função para verificar se um jogador ganhou o jogo
+def verificar_vitoria(jogador: Jogador) -> bool:
+    objetivo = jogador.objetivo
+    
+    # Verifica se o jogador completou o objetivo de conquistar territórios
+    if objetivo["tipo"] == "conquistar_territorios":
+        if len(jogador.territorios) >= objetivo["quantidade"]:
+            return True
+    
+    # Verifica se o jogador controla os continentes necessários
+    elif objetivo["tipo"] == "controlar_continentes":
+        continentes_controlados = [cont for cont in objetivo["continentes"] if all(territorio in jogador.territorios for territorio in continentes[cont])]
+        if len(continentes_controlados) == len(objetivo["continentes"]):
+            return True
+    
+    # Verifica se o jogador eliminou outro jogador
+    elif objetivo["tipo"] == "eliminar_jogador":
+        jogador_eliminado = all(j.cor_exercito != objetivo["cor"] for j in jogadores)
+        if jogador_eliminado:
+            return True
+    
+    return False
+
 @app.post("/jogadores/adicionar/")
 def adicionar_jogador(nome: str):
     if any(j.nome == nome for j in jogadores):
@@ -354,39 +377,14 @@ def exercitos_bonus_por_continente():
         jogador.exercitos += exercitos_bonus
     return {j.nome: j.exercitos for j in jogadores}
 
-@app.get("/objetivo/verificar/")
-def verificar_objetivo(jogador: str):
-    jogador_obj = encontrar_jogador(jogador)
-    objetivo = jogador_obj.objetivo
-    
-    # Verificação para "conquistar_territorios"
-    if objetivo["tipo"] == "conquistar_territorios":
-        if len(jogador_obj.territorios) >= objetivo["quantidade"]:
-            return {"message": f"O jogador {jogador} atingiu o objetivo de conquistar {objetivo['quantidade']} territórios!"}
-    
-    # Verificação para "controlar_continentes"
-    elif objetivo["tipo"] == "controlar_continentes":
-        continentes_conquistados = []
-        for continente, territorios in continentes.items():
-            if all(territorio in jogador_obj.territorios for territorio in territorios):
-                continentes_conquistados.append(continente)
-        if set(objetivo["continentes"]).issubset(continentes_conquistados):
-            return {"message": f"O jogador {jogador} atingiu o objetivo de controlar os continentes: {', '.join(objetivo['continentes'])}!"}
-    
-    # Verificação para "eliminar_jogador" por cor do exército
-    elif objetivo["tipo"] == "eliminar_jogador":
-        cor_adversario = objetivo["cor"]
-        try:
-            jogador_adversario = next(j for j in jogadores if j.cor_exercito == cor_adversario)
-            if not jogador_adversario.territorios:  # Se o jogador foi eliminado (sem territórios)
-                return {"message": f"O jogador {jogador} atingiu o objetivo de eliminar o jogador com a cor {cor_adversario}!"}
-        except StopIteration:
-            return {"message": f"O jogador {jogador} atingiu o objetivo de eliminar o jogador com a cor {cor_adversario}!"}
+@app.get("/verificar-vitoria/")
+def verificar_vitoria_geral():
+    for jogador in jogadores:
+        if verificar_vitoria(jogador):
+            return {"message": f"{jogador.nome} venceu o jogo!"}
+    return {"message": "Nenhum jogador venceu ainda."}
 
-    return {"message": f"O jogador {jogador} ainda não completou o objetivo"}
-
-
-# Nova rota para visualizar informações de um jogador
+# Rota para visualizar informações de um jogador
 @app.get("/jogadores/ver/")
 def ver_jogador(nome: str):
     jogador = encontrar_jogador(nome)
