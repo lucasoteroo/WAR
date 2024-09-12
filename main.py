@@ -106,6 +106,25 @@ def rolar_dados(quantidade: int) -> List[int]:
 def territorios_sao_adjacentes(territorio1: str, territorio2: str) -> bool:
     return territorio2 in adjacencias_territorios.get(territorio1, [])
 
+# Função para bônus de exércitos por continente controlado
+def controlar_continente(jogador: Jogador) -> int:
+    exercitos_bonus = 0
+    for continente, territorios in continentes.items():
+        if all(territorio in jogador.territorios for territorio in territorios):
+            if continente == "Ásia":
+                exercitos_bonus += 7
+            elif continente == "América do Norte":
+                exercitos_bonus += 5
+            elif continente == "Europa":
+                exercitos_bonus += 5
+            elif continente == "África":
+                exercitos_bonus += 3
+            elif continente == "Oceania":
+                exercitos_bonus += 2
+            elif continente == "América do Sul":
+                exercitos_bonus += 2
+    return exercitos_bonus
+
 @app.post("/jogadores/adicionar/")
 def adicionar_jogador(nome: str):
     if any(j.nome == nome for j in jogadores):
@@ -311,6 +330,13 @@ def trocar_cartas(jogador: str, cartas: List[str]):
         jogador_obj.cartas.remove(carta)
     
     return {"message": f"{jogador} trocou as cartas {cartas}"}
+
+@app.post("/rodada/exercitos-por-continente/")
+def exercitos_bonus_por_continente():
+    for jogador in jogadores:
+        exercitos_bonus = controlar_continente(jogador)
+        jogador.exercitos += exercitos_bonus
+    return {j.nome: j.exercitos for j in jogadores}
 
 @app.get("/objetivo/verificar/")
 def verificar_objetivo(jogador: str):
