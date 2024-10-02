@@ -1,90 +1,78 @@
+
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import List, Dict
 import random
+from classes import Jogador, CriadorJogador
 
 app = FastAPI()
 
-# Definindo os modelos de dados
-class Jogador(BaseModel):
-    nome: str
-    cor_exercito: str = None
-    objetivo: str = None
-    territorios: Dict[str, int] = []
-    exercitos: int = 0
-    cartas: List[str] = []
-
 # Simulando alguns dados
-# Simulando alguns dados
-territorios_iniciais = ["Oriente Medio", "Aral", "Omsk", "Dudinka", "Siberia", "Tchita", "Mongolia", "Vladivostok", "China", "India", "Japao", "Vietna", 
-                        "Argentina/Uruguai", "Brasil", "Colombia/Venezuela", "Peru/Bolivia/Chile", 
-                        "Mexico", "California", "Nova Iorque", "Labrador", "Ottawa", "Vancouver", "Mackenzie", "Alasca", "Groenlandia", 
-                        "Alemanha", "Espanha/Portugal/Franca/Italia", "Polonia/Iugoslavia", "Moscou", "Islandia", "Inglaterra", "Suecia", 
-                        "Australia", "Borneo", "Sumatra", "Nova Guine",
-                        "Argelia/Nigeria", "Egito", "Congo", "Sudao", "Madagascar", "Africa do sul"]
+territorios_iniciais = ["Oriente Médio", "Aral", "Omsk", "Dudinka", "Sibéria", "Tchita", "Mongólia", "Vladivostok", "China", "Índia", "Japão", "Vietnã", 
+                        "Argentina/Uruguai", "Brasil", "Colômbia/Venezuela", "Peru/Bolívia/Chile", 
+                        "Mexico", "California", "Nova Iorque", "Labrador", "Ottawa", "Vancouver", "Mackenzie", "Alasca", "Groenlândia", 
+                        "Alemanha", "Espanha/Portugal/França/Itália", "Polônia/Iugoslávia", "Moscou", "Islândia", "Inglaterra", "Suécia", 
+                        "Australia", "Bornéu", "Sumatra", "Nova Guiné",
+                        "Argélia/Nigéria", "Egito", "Congo", "Sudão", "Madagascar", "Africa do sul"]
 
 objetivos_possiveis = [
     {"tipo": "conquistar_territorios", "quantidade": 24},
-    {"tipo": "controlar_continentes", "continentes": ["Asia", "America do Sul"]},
-    {"tipo": "controlar_continentes", "continentes": ["Asia", "Africa"]},
-    {"tipo": "controlar_continentes", "continentes": ["America do Norte", "Africa"]},
-    {"tipo": "controlar_continentes", "continentes": ["America do Norte", "Oceania"]},
+    {"tipo": "controlar_continentes", "continentes": ["Ásia", "América do Sul"]},
     {"tipo": "eliminar_jogador", "cor": None}
 ]
 
-
 continentes = {
-    "Asia": ["Oriente Medio", "Aral", "Omsk", "Dudinka", "Siberia", "Tchita", "Mongolia", "Vladivostok", "China", "India", "Japao", "Vietna"],
-    "America do Sul": ["Argentina/Uruguai", "Brasil", "Colombia/Venezuela", "Peru/Bolivia/Chile"],
-    "America do Norte": ["Mexico", "California", "Nova Iorque", "Labrador", "Ottawa", "Vancouver", "Mackenzie", "Alasca", "Groenlandia"],
-    "Europa": ["Alemanha", "Espanha/Portugal/Franca/Italia", "Polonia/Iugoslavia", "Moscou", "Islandia", "Inglaterra", "Suecia"],
-    "Africa": ["Argelia/Nigeria", "Egito", "Congo", "Sudao", "Madagascar", "Africa do sul"],
-    "Oceania": ["Australia", "Borneo", "Sumatra", "Nova Guine"]
+    "Ásia": ["Oriente Médio", "Aral", "Omsk", "Dudinka", "Sibéria", "Tchita", "Mongólia", "Vladivostok", "China", "Índia", "Japão", "Vietnã"],
+    "América do Sul": ["Argentina/Uruguai", "Brasil", "Colômbia/Venezuela", "Peru/Bolívia/Chile"],
+    "America do Norte": ["Mexico", "California", "Nova Iorque", "Labrador", "Ottawa", "Vancouver", "Mackenzie", "Alasca", "Groenlândia"],
+    "Europa": ["Alemanha", "Espanha/Portugal/França/Itália", "Polônia/Iugoslávia", "Moscou", "Islândia", "Inglaterra", "Suécia"],
+    "Africa": ["Argélia/Nigéria", "Egito", "Congo", "Sudão", "Madagascar", "Africa do sul"],
+    "Oceania": ["Australia", "Bornéu", "Sumatra", "Nova Guiné"]
 }
 
 adjacencias_territorios= {
-    "Oriente Medio": ["Moscou","Aral","Polonia/Iugoslavia", "India", "Egito"],
-    "Aral": ["Oriente Medio","Moscou","Omsk", "China", "India"],
-    "Omsk": ["Aral","Dudinka","Mongolia", "Moscou", "China"],
-    "Dudinka": ["Mongolia","Omsk","Siberia","Tchita"],
-    "Siberia": ["Dudinka","Tchita","Vladivostok"],
-    "Tchita": ["Dudinka", "China","Vladivostok", "Siberia", "Mongolia"],
-    "Mongolia": ["Tchita","Omsk","Dudinka","China"],
-    "Vladivostok": ["Tchita","China","Siberia", "Japao", "Alasca"],
-    "China": ["Aral","Omsk","Tchita","Mongolia", "Japao", "India", "Vietna", "Vladivostok"],
-    "India": ["Oriente Medio","Aral","China","Sumatra", "Vietna"],
-    "Japao": ["China", "Vladivostok"],
-    "Vietna": ["India","China","Borneo"],
+    "Oriente Médio": ["Moscou","Aral","Polônia/Iugoslávia", "Índia", "Egito"],
+    "Aral": ["Oriente Médio","Moscou","Omsk", "China", "Índia"],
+    "Omsk": ["Aral","Dudinka","Mongólia", "Moscou", "China"],
+    "Dudinka": ["Mongólia","Omsk","Sibéria","Tchita"],
+    "Sibéria": ["Dudinka","Tchita","Vladivostok"],
+    "Tchita": ["Dudinka", "China","Vladivostok", "Sibéria", "Mongólia"],
+    "Mongólia": ["Tchita","Omsk","Dudinka","China"],
+    "Vladivostok": ["Tchita","China","Sibéria", "Japão", "Alasca"],
+    "China": ["Aral","Omsk","Tchita","Mongólia", "Japão", "Índia", "Vietnã", "Vladivostok"],
+    "Índia": ["Oriente Médio","Aral","China","Sumatra", "Vietnã"],
+    "Japão": ["China", "Vladivostok"],
+    "Vietnã": ["Índia","China","Bornéu"],
     "Argentina/Uruguai": ["Brasil", "Peru/Bolivia/Chile"],
-    "Brasil": ["Argentina/Uruguai", "Colombia/Venezuela", "Peru/Bolivia/Chile", "Argelia/Nigeria"],
-    "Colombia/Venezuela": ["Brasil", "Peru/Bolivia/Chile", "Mexico"],
-    "Peru/Bolivia/Chile": ["Brasil", "Colombia/Venezuela", "Argentina/Uruguai"],
-    "Argelia/Nigeria": ["Brasil", "Espanha/Portugal/Franca/Italia", "Congo","Egito","Sudao"],
-    "Egito": ["Argelia/Nigeria", "Espanha/Portugal/Franca/Italia", "Sudao", "Oriente Medio", "Polonia/Iugoslavia"],
-    "Congo": ["Africa do sul", "Sudao", "Argelia/Nigeria"],
-    "Sudao": ["Africa do sul", "Madagascar", "Argelia/Nigeria", "Egito"],
-    "Madagascar": ["Sudao", "Africa do sul"],
-    "Africa do Sul": ["Congo", "Sudao", "Madagascar"],
-    "Mexico": ["Colombia/Venezuela", "Nova Iorque", "California"],
-    "California": ["Mexico", "Ottawa", "Vancouver", "Nova Iorque"],
-    "Nova Iorque": ["Labrador", "Ottawa", "California", "Mexico"],
-    "Labrador": ["Nova Iorque", "Ottawa", "Groenlandia"],
+    "Brasil": ["Argentina/Uruguai", "Colômbia/Venezuela", "Peru/Bolivia/Chile", "Argélia/Nigéria"],
+    "Colômbia/Venezuela": ["Brasil", "Peru/Bolívia/Chile", "México"],
+    "Peru/Bolívia/Chile": ["Brasil", "Colômbia/Venezuela", "Argentina/Uruguai"],
+    "Argélia/Nigéria": ["Brasil", "Espanha/Portugal/França/Itália", "Congo","Egito","Sudão"],
+    "Egito": ["Argélia/Nigéria", "Espanha/Portugal/França/Itália", "Sudão", "Oriente Médio", "Polônia/Iugoslávia"],
+    "Congo": ["Africa do sul", "Sudão", "Argélia/Nigéria"],
+    "Sudão": ["Africa do sul", "Madagascar", "Argélia/Nigéria", "Egito"],
+    "Madagascar": ["Sudão", "Africa do sul"],
+    "Africa do Sul": ["Congo", "Sudão", "Madagascar"],
+    "México": ["Colômbia/Venezuela", "Nova Iorque", "Califónia"],
+    "California": ["México", "Ottawa", "Vancouver", "Nova Iorque"],
+    "Nova Iorque": ["Labrador", "Ottawa", "California", "México"],
+    "Labrador": ["Nova Iorque", "Ottawa", "Groenlândia"],
     "Ottawa": ["California", "Nova Iorque", "Labrador", "Vancouver", "Mackenzie"],
     "Vancouver": ["America do Norte", "Ottawa", "Labrador", "Mackenzie", "Alasca"],
-    "Mackenzie": ["Vancouver", "Ottawa", "Alasca", "Groenlandia"],
+    "Mackenzie": ["Vancouver", "Ottawa", "Alasca", "Groenlândia"],
     "Alasca": ["Vladivostok", "Vancouver", "Mackenzie"],
-    "Groenlandia": ["Mackenzie", "Labrador", "Islandia"],
-    "Alemanha": ["Inglaterra", "Espanha/Portugal/Franca/Italia", "Polonia/Iugoslavia"],
-    "Espanha/Portugal/Franca/Italia": ["Argelia/Nigeria", "Alemanha", "Inglaterra", "Polonia/Iugoslavia", "Egito"],
-    "Polonia/Iugoslavia": ["Espanha/Portugal/Franca/Italia", "Alemanha", "Moscou", "Egito", "Oriente Medio"],
-    "Moscou": ["Suecia", "Polonia/Iugoslavia", "Oriente Medio", "Aral", "Omsk"],
-    "Islandia": ["Inglaterra", "Groenlandia"],
-    "Inglaterra": ["Alemanha", "Islandia", "Suecia", "Espanha/Portugal/Franca/Italia"],
-    "Suecia": ["Moscou", "Inglaterra"],
-    "Australia": ["Nova Guine", "Borneo", "Sumatra"],
-    "Borneo": ["Australia", "Vietna", "Nova Guine"],
-    "Sumatra": ["Australia", "India"],
-    "Nova Guine": ["Australia", "Borneo"]
+    "Groenlândia": ["Mackenzie", "Labrador", "Islândia"],
+    "Alemanha": ["Inglaterra", "Espanha/Portugal/França/Itália", "Polônia/Iugoslávia"],
+    "Espanha/Portugal/França/Itália": ["Argélia/Nigéria", "Alemanha", "Inglaterra", "Polônia/Iugoslávia", "Egito"],
+    "Polônia/Iugoslávia": ["Espanha/Portugal/França/Itália", "Alemanha", "Moscou", "Egito", "Oriente Médio"],
+    "Moscou": ["Suécia", "Polônia/Iugoslávia", "Oriente Médio", "Aral", "Omsk"],
+    "Islândia": ["Inglaterra", "Groenlândia"],
+    "Inglaterra": ["Alemanha", "Islândia", "Suécia", "Espanha/Portugal/França/Itália"],
+    "Suécia": ["Moscou", "Inglaterra"],
+    "Australia": ["Nova Guiné", "Bornéu", "Sumatra"],
+    "Bornéu": ["Australia", "Vietnâ", "Nova Guiné"],
+    "Sumatra": ["Australia", "Índia"],
+    "Nova Guiné": ["Australia", "Bornéu"]
+    
 }
 
 cores_disponiveis = ["Vermelho", "Azul", "Verde", "Amarelo", "Branco", "Preto"]
@@ -157,8 +145,13 @@ def verificar_vitoria(jogador: Jogador) -> bool:
 def adicionar_jogador(nome: str):
     if any(j.nome == nome for j in jogadores):
         raise HTTPException(status_code=400, detail="Jogador já existe")
-    jogador = Jogador(nome=nome)
+    
+    # Criando um jogador humano com o Factory Method
+    criador = CriadorJogador()
+    jogador = criador.criar_jogador(nome)
+    
     jogadores.append(jogador)
+    
     return {"message": f"Jogador {jogador.nome} adicionado com sucesso"}
 
 @app.post("/preparacao/escolher-cor/")
@@ -174,25 +167,17 @@ def escolher_cor(jogador: str, cor: str):
 def receber_objetivo(jogador: str):
     jogador_obj = encontrar_jogador(jogador)
     
-    # Escolhe um objetivo aleatório
     objetivo = random.choice(objetivos_possiveis)
     
-    # Se o objetivo for eliminar um jogador, escolhe a cor de um adversário diferente do próprio jogador
+    # Se o objetivo for eliminar um jogador, escolhe a cor de um adversário
     if objetivo["tipo"] == "eliminar_jogador":
-        # Filtra os jogadores adversários que possuem uma cor de exército e que não são o próprio jogador
-        adversarios = [j for j in jogadores if j.nome != jogador and j.cor_exercito != jogador_obj.cor_exercito]
-        
-        # Verifica se há adversários disponíveis para evitar erro se todos os jogadores forem eliminados
-        if not adversarios:
-            raise HTTPException(status_code=400, detail="Nenhum adversário disponível para este objetivo")
-        
-        # Escolhe a cor do exército de um adversário
+        adversarios = [j for j in jogadores if j.nome != jogador and j.cor_exercito]
         cor_adversario = random.choice(adversarios).cor_exercito
         objetivo["cor"] = cor_adversario  # Atribui a cor do exército do adversário
-    
-    # Atribui o objetivo ao jogador
+        
     jogador_obj.objetivo = objetivo
     return {"message": f"Objetivo do jogador {jogador}: {objetivo}"}
+
 
 @app.post("/preparacao/definir-ordem/")
 def definir_ordem():
@@ -235,6 +220,12 @@ def distribuir_territorios():
 
     return {j.nome: j.territorios for j in jogadores_ordenados}
 
+@app.post("/preparacao/distribuir-exercitos/")
+def distribuir_exercitos(jogador: str, exercitos: int):
+    jogador_obj = encontrar_jogador(jogador)
+    jogador_obj.exercitos += exercitos
+    return {"message": f"{exercitos} exércitos distribuídos para o jogador {jogador}"}
+
 @app.post("/preparacao/distribuir-exercitos-iniciais/")
 def distribuir_exercitos_iniciais():
     numero_jogadores = len(jogadores)
@@ -260,37 +251,11 @@ def distribuir_exercitos_iniciais():
 @app.post("/rodada/iniciar/") 
 def iniciar_rodada():
     for j in jogadores:
-        j.exercitos += 5  # Supondo 5 exércitos por rodada
+        j.exercitos += int(len((j.territorios))/2)
     return {j.nome: j.exercitos for j in jogadores}
 
-@app.post("/preparacao/distribuir-exercitos-por-territorio/")
-def distribuir_exercitos_por_territorio():
-    for jogador in jogadores:
-        num_territorios = len(jogador.territorios)
-        if num_territorios == 0:
-            continue
-        
-        # Inicialmente, cada território recebe 1 exército
-        exército_por_territorio = {territorio: 1 for territorio in jogador.territorios}
-        exércitos_restantes = jogador.exercitos - num_territorios  # Sobram os exércitos após colocar 1 em cada território
-        
-        # Distribuir os exércitos restantes, com limite de 3 exércitos por território
-        while exércitos_restantes > 0:
-            territorio_aleatorio = random.choice(jogador.territorios)
-            
-            # Verifica se o território já tem o máximo de 3 exércitos
-            if exército_por_territorio[territorio_aleatorio] < 3:
-                exército_por_territorio[territorio_aleatorio] += 1
-                exércitos_restantes -= 1
-        
-        # Atualiza os territórios do jogador com o número de exércitos
-        jogador.territorios = {territorio: exército_por_territorio[territorio] for territorio in jogador.territorios}
-        jogador.exercitos = 0  # Zera os exércitos após distribuição
-
-    return {j.nome: j.territorios for j in jogadores}
-
 @app.post("/rodada/ataque/")
-def iniciar_ataque(jogador_atacante: str, territorio_atacante: str, jogador_defensor: str, territorio_defensor: str, mover_exercitos: int = 0):
+def iniciar_ataque(jogador_atacante: str, territorio_atacante: str, jogador_defensor: str, territorio_defensor: str):
     atacante = encontrar_jogador(jogador_atacante)
     defensor = encontrar_jogador(jogador_defensor)
     
@@ -298,21 +263,19 @@ def iniciar_ataque(jogador_atacante: str, territorio_atacante: str, jogador_defe
     if territorio_atacante not in atacante.territorios or territorio_defensor not in defensor.territorios:
         raise HTTPException(status_code=400, detail="Territórios inválidos para ataque")
     
-    # Obtém os exércitos de cada território
-    exercitos_atacante = atacante.territorios[territorio_atacante]
-    exercitos_defensor = defensor.territorios[territorio_defensor]
-    
-    # Valida se o território atacante tem pelo menos 2 exércitos (1 para ataque e 1 para defesa)
-    if exercitos_atacante < 2:
-        raise HTTPException(status_code=400, detail="Você precisa de pelo menos 2 exércitos no território atacante")
+    # Valida se o território atacante tem mais de 1 exército
+    if atacante.exercitos < 2:
+        raise HTTPException(status_code=400, detail="Exércitos insuficientes para atacar")
     
     # Valida se os territórios atacante e defensor são adjacentes (adapte de acordo com as regras)
+    # Aqui deve-se implementar uma lógica para verificar a conexão dos territórios, como uma lista de adjacências
+    # Exemplo:
     if not territorios_sao_adjacentes(territorio_atacante, territorio_defensor):
         raise HTTPException(status_code=400, detail="Territórios não são adjacentes")
     
     # Continua com a rolagem de dados e resolução da batalha
-    dados_atacante = rolar_dados(min(3, exercitos_atacante - 1))  # Ataque com até 3 exércitos
-    dados_defensor = rolar_dados(min(2, exercitos_defensor))      # Defesa com até 2 exércitos
+    dados_atacante = rolar_dados(min(3, atacante.exercitos - 1))  # Ataque com até 3 exércitos
+    dados_defensor = rolar_dados(min(2, defensor.exercitos))      # Defesa com até 2 exércitos
     
     perdas_atacante = 0
     perdas_defensor = 0
@@ -324,24 +287,13 @@ def iniciar_ataque(jogador_atacante: str, territorio_atacante: str, jogador_defe
         else:
             perdas_atacante += 1
     
-    # Atualiza os exércitos no território atacante e defensor
-    atacante.territorios[territorio_atacante] -= perdas_atacante
-    defensor.territorios[territorio_defensor] -= perdas_defensor
+    atacante.exercitos -= perdas_atacante
+    defensor.exercitos -= perdas_defensor
     
     # Se o defensor perde todos os exércitos, atacante conquista o território
-    if defensor.territorios[territorio_defensor] <= 0:
-        defensor.territorios.pop(territorio_defensor)  # Remove o território do defensor
-        
-        # Limita a movimentação de exércitos: mínimo de 1 deve permanecer no território original
-        exercitos_restantes_no_atacante = atacante.territorios[territorio_atacante]
-        if mover_exercitos > exercitos_restantes_no_atacante - 1:
-            raise HTTPException(status_code=400, detail=f"Você só pode mover até {exercitos_restantes_no_atacante - 1} exércitos")
-        if mover_exercitos < 1:
-            raise HTTPException(status_code=400, detail="Você precisa mover pelo menos 1 exército")
-        
-        # Mover os exércitos escolhidos para o território conquistado
-        atacante.territorios[territorio_atacante] -= mover_exercitos
-        atacante.territorios[territorio_defensor] = mover_exercitos  # Adiciona o território ao atacante com os exércitos movidos
+    if defensor.exercitos <= 0:
+        defensor.territorios.remove(territorio_defensor)
+        atacante.territorios.append(territorio_defensor)
     
     return {
         "resultados_dados": {
@@ -349,11 +301,10 @@ def iniciar_ataque(jogador_atacante: str, territorio_atacante: str, jogador_defe
             "defensor": dados_defensor
         },
         "resultado_batalha": {
-            "atacante": {"nome": atacante.nome, "perdas": perdas_atacante, "exercitos_restantes": atacante.territorios[territorio_atacante]},
-            "defensor": {"nome": defensor.nome, "perdas": perdas_defensor, "exercitos_restantes": defensor.territorios.get(territorio_defensor, 0)},
+            "atacante": {"nome": atacante.nome, "perdas": perdas_atacante, "exercitos_restantes": atacante.exercitos},
+            "defensor": {"nome": defensor.nome, "perdas": perdas_defensor, "exercitos_restantes": defensor.exercitos},
         },
-        "conquista": f"{atacante.nome} conquistou {territorio_defensor}" if defensor.territorios.get(territorio_defensor) is None else "Território não conquistado",
-        "exercitos_movidos": mover_exercitos if defensor.territorios.get(territorio_defensor) is None else 0
+        "conquista": f"{atacante.nome} conquistou {territorio_defensor}" if defensor.exercitos <= 0 else "Território não conquistado"
     }
 
 
